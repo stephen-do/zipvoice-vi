@@ -79,6 +79,14 @@ def get_args():
         default="output.wav",
         help="Path to save the output audio",
     )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducible sampling. Omit for random output "
+        "each call.",
+    )
     return parser.parse_args()
 
 
@@ -89,6 +97,7 @@ def prepare_request(
     sample_rate=16000,
     padding_duration: int = None,
     audio_save_dir: str = "./",
+    seed: int = None,
 ):
     assert len(waveform.shape) == 1, "waveform should be 1D"
     lengths = np.array([[len(waveform)]], dtype=np.int32)
@@ -139,6 +148,16 @@ def prepare_request(
         ]
     }
 
+    if seed is not None:
+        data["inputs"].append(
+            {
+                "name": "seed",
+                "shape": [1, 1],
+                "datatype": "INT32",
+                "data": [[seed]],
+            }
+        )
+
     return data
 
 
@@ -153,7 +172,7 @@ if __name__ == "__main__":
     assert sr == 16000, "sample rate hardcoded in server"
 
     samples = np.array(waveform, dtype=np.float32)
-    data = prepare_request(samples, args.reference_text, args.target_text)
+    data = prepare_request(samples, args.reference_text, args.target_text, seed=args.seed)
     rsp = requests.post(
         url,
         headers={"Content-Type": "application/json"},

@@ -67,6 +67,12 @@ input [
     name: "target_text"
     data_type: TYPE_STRING
     dims: [1]
+  },
+  {
+    name: "seed"
+    data_type: TYPE_INT32
+    dims: [1]
+    optional: True
   }
 ]
 output [

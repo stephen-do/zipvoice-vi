@@ -24,6 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import json
+import logging
 import os
 
 import torch
@@ -112,12 +113,17 @@ class TritonPythonModel:
         prompt_texts_list = []
         target_texts_list = []
         prompt_rms_list = []
+        seeds_list = []
 
         for request in requests:
             reference_wav_tensor = pb_utils.get_input_tensor_by_name(request, "reference_wav")
             reference_wav_len_tensor = pb_utils.get_input_tensor_by_name(request, "reference_wav_len")
             reference_text = pb_utils.get_input_tensor_by_name(request, "reference_text").as_numpy()[0][0].decode("utf-8")
             target_text = pb_utils.get_input_tensor_by_name(request, "target_text").as_numpy()[0][0].decode("utf-8")
+
+            seed_tensor = pb_utils.get_input_tensor_by_name(request, "seed")
+            if seed_tensor is not None:
+                seeds_list.append(int(seed_tensor.as_numpy()[0]))
 
             prompt_wav = from_dlpack(reference_wav_tensor.to_dlpack())
             wav_len = from_dlpack(reference_wav_len_tensor.to_dlpack()).item()
@@ -132,6 +138,15 @@ class TritonPythonModel:
             prompt_wavs_list.append(prompt_wav)
             prompt_texts_list.append(reference_text)
             target_texts_list.append(target_text)
+
+        if seeds_list:
+            if len(set(seeds_list)) > 1:
+                logging.warning(
+                    f"Dynamic batching merged requests with different seeds "
+                    f"{seeds_list}; only the first one ({seeds_list[0]}) will "
+                    f"be applied to this batch's sampling noise."
+                )
+            torch.manual_seed(seeds_list[0])
 
         prompt_features_list = []
         for prompt_wav in prompt_wavs_list:
