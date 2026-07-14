@@ -79,7 +79,7 @@ class TritonPythonModel:
 
         if self.model_name == "zipvoice":
             self.model = ZipVoice(**model_config["model"], **tokenizer_config)
-            self.num_step = 16
+            self.num_step = 8
             self.guidance_scale = 1.0
         else:
             self.model = ZipVoiceDistill(**model_config["model"], **tokenizer_config)
