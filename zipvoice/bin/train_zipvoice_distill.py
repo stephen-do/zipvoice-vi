@@ -177,6 +177,7 @@ def get_parser():
     parser.add_argument(
         "--teacher-model",
         type=str,
+        default='checkpoints/zipvoice/models.pt',
         help="""Checkpoints of pre-trained teacher model""",
     )
 
@@ -331,14 +332,14 @@ def get_parser():
     parser.add_argument(
         "--model-config",
         type=str,
-        default="conf/zipvoice_base.json",
+        default="checkpoints/zipvoice/model.json",
         help="The model configuration file.",
     )
 
     parser.add_argument(
         "--tokenizer",
         type=str,
-        default="emilia",
+        default="espeak",
         choices=["emilia", "libritts", "espeak", "simple"],
         help="Tokenizer type.",
     )
@@ -346,7 +347,7 @@ def get_parser():
     parser.add_argument(
         "--lang",
         type=str,
-        default="en-us",
+        default="vi",
         help="Language identifier, used when tokenizer type is espeak. see"
         "https://github.com/rhasspy/espeak-ng/blob/master/docs/languages.md",
     )
@@ -354,7 +355,7 @@ def get_parser():
     parser.add_argument(
         "--token-file",
         type=str,
-        default="data/tokens_emilia.txt",
+        default="data/tokens.txt",
         help="The file that contains information that maps tokens to ids,"
         "which is a text file with '{token}\t{token_id}' per line.",
     )
