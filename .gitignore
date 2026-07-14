@@ -196,3 +196,4 @@ cython_debug/
 checkpoints/
 models_trt/
 infore_16k_denoised.zip
+data/
