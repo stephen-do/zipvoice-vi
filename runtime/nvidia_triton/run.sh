@@ -5,9 +5,9 @@ model_name=${3:-zipvoice}
 echo "Start stage: $stage, Stop stage: $stop_stage"
 echo "Model name: $model_name"
 export CUDA_VISIBLE_DEVICES=0
-export PYTHONPATH=$PYTHONPATH:/workspace/ZipVoice
+export PYTHONPATH=$PYTHONPATH:/workspace/zipvoice-vi
 
-MODEL_DIR=models # huggingface model dir (only used by stage 1 download)
+MODEL_DIR=/workspace/zipvoice-vi/checkpoints # huggingface model dir (only used by stage 1 download)
 
 # CKPT_DIR: directory containing model.pt, tokens.txt, model.json for $model_name.
 # TRT_DIR: directory to write/read the exported TensorRT engine.
@@ -21,8 +21,8 @@ MODEL_REPO=./model_repo_${model_name}
 # Tokenizer used to train/fine-tune the checkpoint, one of:
 # emilia | espeak | libritts | simple. LANG is only used when TOKENIZER=espeak
 # (see https://github.com/rhasspy/espeak-ng/blob/master/docs/languages.md).
-TOKENIZER=${TOKENIZER:-emilia}
-LANG=${LANG:-en-us}
+TOKENIZER=${TOKENIZER:-espeak}
+LANG=${LANG:-vi}
 
 if [ "$stage" -le 1 ] && [ "$stop_stage" -ge 1 ]; then
     echo "Stage 1: Download huggingface models"

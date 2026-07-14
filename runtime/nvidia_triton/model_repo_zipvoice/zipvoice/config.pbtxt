@@ -25,11 +25,11 @@ parameters [
   },
   {
     key: "lang"
-    value: { string_value: "vi"}
+    value: { string_value: "C.UTF-8"}
   },
   {
    key: "model_dir",
-   value: {string_value:"/workspace/ZipVoice/models"}
+   value: {string_value:"/workspace/zipvoice-vi/checkpoints/zipvoice"}
   },
   {
    key: "model_name", 
@@ -37,7 +37,7 @@ parameters [
   },
   {
    key: "trt_engine_path",
-   value: {string_value:"/workspace/ZipVoice/models_trt/fm_decoder.fp16.plan"}
+   value: {string_value:"/workspace/zipvoice-vi/checkpoints/zipvoice_trt/fm_decoder.fp16.plan"}
   },
   {
    key: "reference_audio_sample_rate", 

@@ -144,6 +144,10 @@ def convert_onnx_to_trt(
         dtype (torch.dtype, optional): The data type to use. Defaults to torch.float16.
     """
     logging.info("Converting onnx to trt...")
+    # if "EXPLICIT_BATCH" in trt.NetworkDefinitionCreationFlag.__members__:
+    #     network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+    # else:
+    #     network_flags = 0  # Default behavior for TRT 10+
     network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
     logger = trt.Logger(trt.Logger.INFO)
     builder = trt.Builder(logger)
