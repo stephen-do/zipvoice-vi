@@ -29,6 +29,13 @@ teacher_model_stage1=exp/zipvoice_finetune_infore/iter-10000-avg-2.pt
 train_manifest=data/fbank/infore-finetune_cuts_train.jsonl.gz
 dev_manifest=data/fbank/infore-finetune_cuts_dev.jsonl.gz
 
+# --max-duration is the pooled batch duration (seconds) PER GPU (see the note
+# in run_finetune_infore.sh). Distillation additionally keeps a teacher model
+# in GPU memory alongside the student, so it needs more headroom than plain
+# fine-tuning for the same --max-duration - lower this further if you hit
+# `CUDA out of memory` (e.g. try 100 first on a 24GB card).
+max_duration=100
+
 if [ ! -f "$teacher_model_stage1" ]; then
       echo "Error: expect $teacher_model_stage1 !" >&2
       echo "Run run_finetune_infore.sh (stages 0-5) first." >&2
@@ -44,7 +51,7 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
             --world-size 1 \
             --use-fp16 1 \
             --num-iters 60000 \
-            --max-duration 500 \
+            --max-duration ${max_duration} \
             --base-lr 0.0005 \
             --model-config ${base_dir}/model.json \
             --tokenizer ${tokenizer} \
@@ -75,7 +82,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
             --use-fp16 1 \
             --num-iters 2000 \
             --save-every-n 1000 \
-            --max-duration 500 \
+            --max-duration ${max_duration} \
             --base-lr 0.0001 \
             --model-config ${base_dir}/model.json \
             --tokenizer ${tokenizer} \

@@ -27,6 +27,16 @@ tokenizer=espeak
 # `lhotse cut describe data/fbank/infore-finetune_cuts_train.jsonl.gz`
 max_len=20
 
+# --max-duration is the pooled batch duration (seconds) PER GPU, not global -
+# it does not shrink automatically when --world-size is lowered. The
+# upstream recipes default to 500 for multi-GPU setups with more VRAM per
+# GPU; on a single 24GB card (e.g. a rented RTX 3090) that overflows memory.
+# Lower this if you hit `CUDA out of memory` (start around 100-150 and
+# tune up/down from there; you can test a value cheaply first with:
+#   python3 -m zipvoice.bin.train_zipvoice ... --scan-oom 1
+# which scans the worst-case batches for OOM without doing a full run).
+max_duration=150
+
 # Raw InfoRe data: paired {id}.wav/{id}.txt files (see ../../.gitignore,
 # extracted from infore_16k_denoised.zip)
 raw_data_dir=../../data
@@ -100,7 +110,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
             --base-lr 0.0001 \
             --num-iters 10000 \
             --save-every-n 1000 \
-            --max-duration 500 \
+            --max-duration ${max_duration} \
             --max-len ${max_len} \
             --model-config ${base_dir}/model.json \
             --checkpoint ${base_dir}/models.pt \
