@@ -21,4 +21,5 @@ pypinyin
 setuptools<81
 
 onnx
+onnxconverter-common
 tensorrt==10.7.0
