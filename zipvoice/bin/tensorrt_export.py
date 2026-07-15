@@ -156,8 +156,12 @@ def convert_onnx_to_trt(
     # tensor dtypes are fixed by the ONNX graph and can no longer be
     # overridden via ITensor.dtype after parsing. So cast the ONNX graph
     # itself beforehand instead of mutating the parsed network's tensors.
+    # BuilderFlag.FP16 was removed in TensorRT 11 since it is redundant
+    # once precision comes from a strongly typed network; guard it for
+    # compatibility with TensorRT <= 10, where it still matters.
     if dtype == torch.float16:
-        config.set_flag(trt.BuilderFlag.FP16)
+        if hasattr(trt.BuilderFlag, "FP16"):
+            config.set_flag(trt.BuilderFlag.FP16)
         onnx_bytes = _onnx_to_fp16_bytes(onnx_model)
     elif dtype == torch.float32:
         with open(onnx_model, "rb") as f:
@@ -186,12 +190,21 @@ def convert_onnx_to_trt(
 
 
 def _onnx_to_fp16_bytes(onnx_model: str) -> bytes:
-    """Cast an ONNX graph's float32 tensors (including I/O) to float16."""
+    """Cast an ONNX graph's float32 tensors (including I/O) to float16.
+
+    op_block_list=[] overrides onnxconverter_common's default block list
+    (Min, Max, Resize, Range, CumSum, ...); left at its default, those ops
+    stay float32 while neighboring nodes become float16, and TensorRT's
+    strongly typed parser then rejects the graph for mismatched input
+    types on the ops straddling the boundary.
+    """
     import onnx
     from onnxconverter_common import float16
 
     model = onnx.load(onnx_model)
-    model_fp16 = float16.convert_float_to_float16(model, keep_io_types=False)
+    model_fp16 = float16.convert_float_to_float16(
+        model, keep_io_types=False, op_block_list=[]
+    )
     return model_fp16.SerializeToString()
 
 
