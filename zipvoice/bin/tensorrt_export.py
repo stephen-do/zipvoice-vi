@@ -151,61 +151,40 @@ def convert_onnx_to_trt(
     parser = trt.OnnxParser(network, logger)
     config = builder.create_builder_config()
     # config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 1 << 32)  # 4GB
-
-    # TensorRT 10+ parses ONNX into a strongly typed network, where I/O
-    # tensor dtypes are fixed by the ONNX graph and can no longer be
-    # overridden via ITensor.dtype after parsing. So cast the ONNX graph
-    # itself beforehand instead of mutating the parsed network's tensors.
-    # BuilderFlag.FP16 was removed in TensorRT 11 since it is redundant
-    # once precision comes from a strongly typed network; guard it for
-    # compatibility with TensorRT <= 10, where it still matters.
     if dtype == torch.float16:
-        if hasattr(trt.BuilderFlag, "FP16"):
-            config.set_flag(trt.BuilderFlag.FP16)
-        onnx_bytes = _onnx_to_fp16_bytes(onnx_model)
-    elif dtype == torch.float32:
-        with open(onnx_model, "rb") as f:
-            onnx_bytes = f.read()
-    else:
-        raise ValueError(
-            f"Unsupported dtype {dtype}: export the ONNX model with this "
-            "dtype directly and call convert_onnx_to_trt with torch.float32."
-        )
+        config.set_flag(trt.BuilderFlag.FP16)
 
-    if not parser.parse(onnx_bytes):
-        for error in range(parser.num_errors):
-            print(parser.get_error(error))
-        raise ValueError('failed to parse {}'.format(onnx_model))
-
-    # set input shapes
     profile = builder.create_optimization_profile()
+    # load onnx model
+    with open(onnx_model, "rb") as f:
+        if not parser.parse(f.read()):
+            for error in range(parser.num_errors):
+                print(parser.get_error(error))
+            raise ValueError('failed to parse {}'.format(onnx_model))
+    # set input shapes
     for i in range(len(trt_kwargs['input_names'])):
         profile.set_shape(trt_kwargs['input_names'][i], trt_kwargs['min_shape'][i], trt_kwargs['opt_shape'][i], trt_kwargs['max_shape'][i])
+    if dtype == torch.float16:
+        tensor_dtype = trt.DataType.HALF
+    elif dtype == torch.bfloat16:
+        tensor_dtype = trt.DataType.BF16
+    elif dtype == torch.float32:
+        tensor_dtype = trt.DataType.FLOAT
+    else:
+        raise ValueError('invalid dtype {}'.format(dtype))
+    # set input and output data type
+    for i in range(network.num_inputs):
+        input_tensor = network.get_input(i)
+        input_tensor.dtype = tensor_dtype
+    for i in range(network.num_outputs):
+        output_tensor = network.get_output(i)
+        output_tensor.dtype = tensor_dtype
     config.add_optimization_profile(profile)
     engine_bytes = builder.build_serialized_network(network, config)
     # save trt engine
     with open(trt_model, "wb") as f:
         f.write(engine_bytes)
     logging.info("Succesfully convert onnx to trt...")
-
-
-def _onnx_to_fp16_bytes(onnx_model: str) -> bytes:
-    """Cast an ONNX graph's float32 tensors (including I/O) to float16.
-
-    op_block_list=[] overrides onnxconverter_common's default block list
-    (Min, Max, Resize, Range, CumSum, ...); left at its default, those ops
-    stay float32 while neighboring nodes become float16, and TensorRT's
-    strongly typed parser then rejects the graph for mismatched input
-    types on the ops straddling the boundary.
-    """
-    import onnx
-    from onnxconverter_common import float16
-
-    model = onnx.load(onnx_model)
-    model_fp16 = float16.convert_float_to_float16(
-        model, keep_io_types=False, op_block_list=[]
-    )
-    return model_fp16.SerializeToString()
 
 
 def get_parser() -> argparse.ArgumentParser:

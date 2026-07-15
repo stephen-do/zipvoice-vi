@@ -49,7 +49,7 @@ fi
 
 if [ "$stage" -le 4 ] && [ "$stop_stage" -ge 4 ]; then
     echo "Starting triton server"
-    tritonserver --model-repository=$MODEL_REPO
+    tritonserver --model-repository=$MODEL_REPO --http-port=9100 --grpc-port=9101 --metrics-port=9102
 fi
 
 if [ "$stage" -le 5 ] && [ "$stop_stage" -ge 5 ]; then

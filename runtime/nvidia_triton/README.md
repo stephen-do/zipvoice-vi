@@ -42,12 +42,11 @@ Build and run the Docker container manually:
 
 ```sh
 # Build the Docker image
-docker build . -f Dockerfile.server -t soar97/triton-zipvoice:24.12
+docker build . -f Dockerfile.server -t tuyendn/triton-zipvoice:24.12
 
 # Create and run Docker container
-your_mount_dir=/your/host/path:/your/container/path
-docker run -it --name "zipvoice-server" --gpus all --net host \
-    -v $your_mount_dir --shm-size=2g soar97/triton-zipvoice:24.12
+docker run -it --rm --name "zipvoice-server" --gpus all --net host \
+    -v /home/tuyendn/Documents/workspace/zipvoice-vi:/workspace/zipvoice-vi --shm-size=2g tuyendn/triton-zipvoice:24.12
 ```
 
 ## Server Deployment
